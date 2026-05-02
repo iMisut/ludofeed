@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Si estamos en local usamos localhost, si estamos en producción usamos la ruta relativa
+const isDev = import.meta.env.DEV;
+const API_URL = import.meta.env.VITE_API_URL || (isDev ? 'http://localhost:3000/api' : '/api');
 
 const api = axios.create({
   baseURL: API_URL,
