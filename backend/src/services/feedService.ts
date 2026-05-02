@@ -135,8 +135,8 @@ class FeedService {
   /**
    * Parse RSS 2.0 item
    */
-  private async parseRSSItem(item: any, source: FeedSource): FeedItem | null {
-    try {
+private async parseRSSItem(item: any, source: FeedSource): Promise<FeedItem | null> {
+      try {
       const title = item.title || '';
       const link = item.link || '';
       const pubDate = new Date(item.pubDate || new Date());
