@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: ludofeed-backend
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: >
+      cd backend &&
+      npm install &&
+      npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: FEEDS_URL
+        value: https://misutmeeple.com/feeds.json
+      - key: CACHE_EXPIRY_DAYS
+        value: 30
+      - key: FEED_CHECK_INTERVAL_MINUTES
+        value: 30
+
+  - type: web
+    name: ludofeed-frontend
+    runtime: static site
+    plan: free
+    branch: main
+    buildCommand: >
+      cd frontend &&
+      npm install &&
+      npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: ludofeed-backend
+          property: url
+        value: /api
+    routes:
+      - path: /*
+        destination: /index.html

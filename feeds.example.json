@@ -1,0 +1,34 @@
+# Archivo de ejemplo para feeds en misutmeeple.com
+# Este archivo debe estar disponible en: https://misutmeeple.com/feeds.json
+
+{
+  "sources": [
+    {
+      "id": "site1",
+      "name": "Mi Blog Personal",
+      "url": "https://myblog.com",
+      "feedUrl": "https://myblog.com/feed.xml",
+      "description": "Blog sobre desarrollo y tecnología",
+      "image": "https://myblog.com/logo.png",
+      "category": "Tecnología"
+    },
+    {
+      "id": "site2",
+      "name": "Noticias Tecnológicas",
+      "url": "https://tech-news.com",
+      "feedUrl": "https://tech-news.com/feed",
+      "description": "Las últimas noticias del mundo tech",
+      "image": "https://tech-news.com/icon.png",
+      "category": "Noticias"
+    },
+    {
+      "id": "site3",
+      "name": "Dev.to",
+      "url": "https://dev.to",
+      "feedUrl": "https://dev.to/api/articles?top=7&per_page=25",
+      "description": "Comunidad de desarrolladores",
+      "image": "https://dev.to/favicon.ico",
+      "category": "Desarrollo"
+    }
+  ]
+}

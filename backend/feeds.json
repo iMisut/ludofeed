@@ -1,0 +1,76 @@
+{
+  "sources": [
+    {
+      "id": "misutmeeple",
+      "name": "Misut Meeple",
+      "url": "https://misutmeeple.com",
+      "feedUrl": "https://misutmeeple.com/feed/rss/",
+      "description": "El hogar de las tochorreseñas",
+      "image": "https://www.google.com/s2/favicons?domain=misutmeeple.com&sz=64",
+      "category": "Web"
+    },
+    {
+      "id": "elclubdante",
+      "name": "El Club Dante",
+      "url": "https://www.elclubdante.es",
+      "feedUrl": "https://www.elclubdante.es/feed/rss/",
+      "description": "Reseñas, noticias y toda la actualidad sobre los juegos de mesa<",
+      "image": "https://www.google.com/s2/favicons?domain=elclubdante.es&sz=64",
+      "category": "Web"
+    },
+    {
+      "id": "masmadera",
+      "name": "Más Madera",
+      "url": "https://masmaderapodcast.wordpress.com",
+      "feedUrl": "https://masmaderapodcast.wordpress.com/feed/",
+      "description": "Podcast sobre los nuevos juegos de mesa, eurogames, temáticos y wargames.",
+      "image": "https://www.google.com/s2/favicons?domain=masmaderapodcast.wordpress.com&sz=64",
+      "category": "Podcast"
+    },
+     {
+      "id": "ciudadanomeeple",
+      "name": "Ciudadano Meeple",
+      "url": "https://ciudadanomeeple.wordpress.com",
+      "feedUrl": "https://ciudadanomeeple.wordpress.com/feed/",
+      "description": "El podcast sobre juegos de mesa con Jesús, Pedro (@Gamorrean_boy), Pepe (@troquelconnect) y Sandra (@SeDestroquela).",
+      "image": "https://www.google.com/s2/favicons?domain=ciudadanomeeple.wordpress.com&sz=64",
+      "category": "Podcast"
+    },
+     {
+      "id": "quericoelmambo",
+      "name": "Qué Rico el Mambo",
+      "url": "https://quericoelmambo.podbean.com/",
+      "feedUrl": "https://quericoelmambo.podbean.com/feed/",
+      "description": "Podcast de juegos de mesa con mucho mambo.",
+      "image": "https://www.google.com/s2/favicons?domain=quericoelmambo.podbean.com&sz=64",
+      "category": "Podcast"
+    },
+    {
+      "id": "consolaytablero",
+      "name": "Consola y Tablero",
+      "url": "https://www.consolaytablero.es",
+      "feedUrl": "https://consolaytablero.com/category/juegos-de-mesa/feed/",
+      "description": "Juegos de Mesa y Videojuegos.",
+      "image": "https://www.google.com/s2/favicons?domain=consolaytablero.com&sz=64",
+      "category": "Podcast"
+    },
+    {
+      "id": "visludica",
+      "name": "Visludica",
+      "url": "https://www.visludica.com",
+      "feedUrl": "https://www.visludica.com/feed/",
+      "description": "Podcast sobre los nuevos juegos de mesa, eurogames, temáticos y wargames.",
+      "image": "https://www.google.com/s2/favicons?domain=visludica.com&sz=64",
+      "category": "Podcast"
+    },
+    {
+      "id": "mishigeek",
+      "name": "Mishi Geek",
+      "url": "https://mishigeek.com",
+      "feedUrl": "https://mishigeek.com/feed/",
+      "description": "Opiniones, reseñas, noticias y análisis de Juegos de Mesa modernoss",
+      "image": "https://www.google.com/s2/favicons?domain=mishigeek.com&sz=64",
+      "category": "Web"
+    }
+  ]
+}
