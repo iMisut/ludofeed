@@ -103,6 +103,14 @@ async function loadFeeds() {
     
     total.value = response.total;
     offset.value += limit.value;
+
+    // Si ya hemos cargado todos los items, desconectar el observer
+    if (items.value.length >= total.value) {
+      if (intersectionObserver.value) {
+        intersectionObserver.value.disconnect();
+        intersectionObserver.value = null;
+      }
+    }
   } catch (err) {
     error.value = 'Error al cargar los feeds. Por favor, intenta de nuevo.';
     console.error('Error loading feeds:', err);
@@ -121,6 +129,11 @@ function retry() {
 function setupIntersectionObserver() {
   if (!loadMoreTrigger.value) return;
 
+  // Si ya hemos cargado todos los items, no configurar el observer
+  if (items.value.length >= total.value) {
+    return;
+  }
+
   const options = {
     root: null,
     rootMargin: '100px',
@@ -129,7 +142,7 @@ function setupIntersectionObserver() {
 
   intersectionObserver.value = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (entry.isIntersecting && !loadingMore.value && !loading.value && items.length < total.value) {
+      if (entry.isIntersecting && !loadingMore.value && !loading.value && items.value.length < total.value) {
         loadingMore.value = true;
         loadFeeds();
       }
