@@ -1,5 +1,9 @@
 {
   "name": "ludofeed",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "version": "1.0.0",
   "description": "RSS Feed Aggregator - Agregador de Feeds RSS",
   "private": true,
