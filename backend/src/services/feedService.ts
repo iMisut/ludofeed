@@ -84,7 +84,7 @@ class FeedService {
       });
 
       const parsed = parser.parse(xmlText);
-      const items = this.extractFeedItems(parsed, source);
+      const items = await this.extractFeedItems(parsed, source); // ¡Añade el await!
 
       console.log(`[FeedService] Fetched ${items.length} items from ${source.name}`);
       return items;
@@ -97,7 +97,8 @@ class FeedService {
   /**
    * Parse feed XML and extract items
    */
-  private extractFeedItems(parsed: any, source: FeedSource): FeedItem[] {
+ // Añadimos 'async'
+  private async extractFeedItems(parsed: any, source: FeedSource): Promise<FeedItem[]> {
     const items: FeedItem[] = [];
 
     // Handle RSS 2.0
@@ -106,12 +107,13 @@ class FeedService {
         ? parsed.rss.channel.item
         : [parsed.rss.channel.item];
 
-      feedItems.forEach((item: any) => {
-        const feedItem = this.parseRSSItem(item, source);
+      // Cambiamos el forEach por un bucle for...of
+      for (const item of feedItems) {
+        const feedItem = await this.parseRSSItem(item, source);
         if (feedItem) {
           items.push(feedItem);
         }
-      });
+      }
     }
     // Handle Atom
     else if (parsed.feed?.entry) {
@@ -119,12 +121,12 @@ class FeedService {
         ? parsed.feed.entry
         : [parsed.feed.entry];
 
-      feedItems.forEach((item: any) => {
-        const feedItem = this.parseAtomItem(item, source);
+      for (const item of feedItems) {
+        const feedItem = await this.parseAtomItem(item, source);
         if (feedItem) {
           items.push(feedItem);
         }
-      });
+      }
     }
 
     return items;
@@ -133,7 +135,7 @@ class FeedService {
   /**
    * Parse RSS 2.0 item
    */
-  private parseRSSItem(item: any, source: FeedSource): FeedItem | null {
+  private async parseRSSItem(item: any, source: FeedSource): FeedItem | null {
     try {
       const title = item.title || '';
       const link = item.link || '';
@@ -149,35 +151,37 @@ class FeedService {
 
       let image: string | undefined;
       
-      // Try different sources for image (in order of priority)
+      // 1. Buscar en etiquetas directas (Alta prioridad)
       if (item['media:content']) {
-        const media = Array.isArray(item['media:content']) 
-          ? item['media:content'][0] 
-          : item['media:content'];
+        const media = Array.isArray(item['media:content']) ? item['media:content'][0] : item['media:content'];
         image = media['@_url'];
       } else if (item['media:thumbnail']) {
-        const thumb = Array.isArray(item['media:thumbnail']) 
-          ? item['media:thumbnail'][0]
-          : item['media:thumbnail'];
+        const thumb = Array.isArray(item['media:thumbnail']) ? item['media:thumbnail'][0] : item['media:thumbnail'];
         image = thumb['@_url'];
+      } else if (item['itunes:image']) { 
+        // Muchos blogs y podcasts usan el estándar de iTunes
+        image = item['itunes:image']['@_href'];
       } else if (item.enclosure) {
         const enc = Array.isArray(item.enclosure) 
           ? item.enclosure.find((e: any) => e['@_type']?.startsWith('image')) || item.enclosure[0]
           : item.enclosure;
-          
         if (enc && enc['@_type']?.startsWith('image')) {
           image = enc['@_url'];
         }
-      } else if (item['content:encoded']) {
-        // Try to extract image from HTML content (Añadida flag 'i' para case-insensitive)
-        const htmlContent = item['content:encoded'] as string;
-        const imgMatch = htmlContent.match(/<img[^>]+src=["']([^"'>]+)["']/i);
-        image = imgMatch ? imgMatch[1] : undefined;
-      } else if (item.description) {
-        // Try to extract image from description HTML (Añadida flag 'i')
-        const htmlContent = item.description as string;
-        const imgMatch = htmlContent.match(/<img[^>]+src=["']([^"'>]+)["']/i);
-        image = imgMatch ? imgMatch[1] : undefined;
+      } 
+      
+      // 2. Extraer del contenido HTML (Usando el método mejorado)
+      if (!image) {
+        image = this.extractImageFromHtml(item['content:encoded'], source.url);
+      }
+      if (!image) {
+        image = this.extractImageFromHtml(item.description, source.url);
+      }
+
+      // JUSTO ANTES DEL RETURN, AÑADIMOS EL SALVAVIDAS ASÍNCRONO:
+      if (!image && link) {
+        // Si no hay imagen en el feed, visitamos la web
+        image = await this.fetchImageFromUrl(link);
       }
 
       return {
@@ -219,17 +223,31 @@ class FeedService {
 
       let image: string | undefined;
       
-      // Try different sources for image (in order of priority)
-      if (Array.isArray(item.link)) {
-        // Try to find image link
-        const imgLink = item.link.find(
-          (l: any) => 
-            l['@_rel'] === 'enclosure' && l['@_type']?.startsWith('image') ||
-            l['@_type']?.startsWith('image')
-        );
-        if (imgLink) {
-          image = imgLink['@_href'];
+      // 1. Buscar en etiquetas directas (Alta prioridad)
+      if (item['media:content']) {
+        const media = Array.isArray(item['media:content']) ? item['media:content'][0] : item['media:content'];
+        image = media['@_url'];
+      } else if (item['media:thumbnail']) {
+        const thumb = Array.isArray(item['media:thumbnail']) ? item['media:thumbnail'][0] : item['media:thumbnail'];
+        image = thumb['@_url'];
+      } else if (item['itunes:image']) { 
+        // Muchos blogs y podcasts usan el estándar de iTunes
+        image = item['itunes:image']['@_href'];
+      } else if (item.enclosure) {
+        const enc = Array.isArray(item.enclosure) 
+          ? item.enclosure.find((e: any) => e['@_type']?.startsWith('image')) || item.enclosure[0]
+          : item.enclosure;
+        if (enc && enc['@_type']?.startsWith('image')) {
+          image = enc['@_url'];
         }
+      }
+
+      // 2. Extraer del contenido HTML (Usando el método mejorado)
+      if (!image) {
+        image = this.extractImageFromHtml(item['content:encoded'], source.url);
+      }
+      if (!image) {
+        image = this.extractImageFromHtml(item.description, source.url);
       }
       
       // Try to extract image from content
@@ -275,6 +293,116 @@ class FeedService {
    */
   private stripHTML(html: string): string {
     return html.replace(/<[^>]*>/g, '').trim();
+  }
+
+/**
+   * Extrae la imagen del HTML priorizando la Imagen Destacada de WordPress,
+   * ignorando tracking, emojis y controlando objetos de fast-xml-parser.
+   */
+  private extractImageFromHtml(html: any, baseUrl: string): string | undefined {
+    if (!html) return undefined;
+    
+    // 1. Controlar la "trampa" de fast-xml-parser
+    let htmlStr = '';
+    if (typeof html === 'string') {
+      htmlStr = html;
+    } else if (typeof html === 'object' && html['#text']) {
+      htmlStr = html['#text'];
+    } else {
+      htmlStr = String(html);
+    }
+
+    const imgRegex = /<img[^>]+>/gi;
+    let match;
+    let firstValidImage: string | undefined; // Aquí guardaremos la primera por si acaso
+
+    while ((match = imgRegex.exec(htmlStr)) !== null) {
+      const imgTag = match[0];
+
+      // 2. Extraer src o data-src
+      const srcMatch = imgTag.match(/(?:src|data-src)\s*=\s*["']([^"'>]+)["']/i);
+      if (!srcMatch || !srcMatch[1]) continue;
+      
+      let imageUrl = srcMatch[1];
+
+      // 3. El filtro anti-basura de WordPress
+      if (
+        imgTag.includes('width="1"') || 
+        imgTag.includes('height="1"') || 
+        imageUrl.includes('b.gif') || 
+        imageUrl.includes('wp-stats') || 
+        imageUrl.includes('gravatar.com') || 
+        imageUrl.includes('s.w.org/images/core/emoji')
+      ) {
+        continue; 
+      }
+
+      // 4. Arreglar URLs relativas
+      if (imageUrl.startsWith('//')) {
+        imageUrl = `https:${imageUrl}`;
+      } else if (imageUrl.startsWith('/')) {
+        try {
+          const urlObj = new URL(baseUrl);
+          imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+        } catch (e) {}
+      }
+      
+      // 5. PRIORIDAD WORDPRESS: ¿Es la imagen destacada?
+      // Comprobamos si tiene las clases CSS típicas de los thumbnails de WP
+      const isFeatured = imgTag.includes('wp-post-image') || 
+                         imgTag.includes('attachment-') ||
+                         imgTag.includes('size-large') ||
+                         imgTag.includes('size-full');
+
+      if (isFeatured) {
+        // ¡Bingo! Devolvemos esta inmediatamente y dejamos de buscar
+        return imageUrl; 
+      }
+
+      // Si es una imagen válida pero no parece la destacada, nos la guardamos 
+      // por si resulta que el post no tiene imagen destacada configurada.
+      if (!firstValidImage) {
+        firstValidImage = imageUrl;
+      }
+    }
+    
+    // Si terminamos de leer todo el HTML y no había "Imagen Destacada", 
+    // devolvemos la primera imagen real que encontramos.
+    return firstValidImage;
+  }
+
+  /**
+   * Visita la URL del artículo y extrae la imagen de las meta-etiquetas (Open Graph / Twitter)
+   */
+  private async fetchImageFromUrl(url: string): Promise<string | undefined> {
+    try {
+      // Timeout MUY corto (3 segundos) para no bloquear el proceso si una web es lenta
+      const response = await fetch(url, { timeout: 3000 });
+      
+      if (!response.ok) return undefined;
+      
+      const html = await response.text();
+
+      // 1. Prioridad Absoluta: Open Graph (og:image) - El estándar de Facebook/WhatsApp
+      const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"'>]+)["']/i) || 
+                      html.match(/<meta[^>]*content=["']([^"'>]+)["'][^>]*property=["']og:image["']/i);
+      if (ogMatch && ogMatch[1]) return ogMatch[1];
+
+      // 2. Segunda opción: Twitter Card (twitter:image)
+      const twMatch = html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"'>]+)["']/i) ||
+                      html.match(/<meta[^>]*content=["']([^"'>]+)["'][^>]*name=["']twitter:image["']/i);
+      if (twMatch && twMatch[1]) return twMatch[1];
+
+      // 3. Fallback: Imagen destacada explícita en el HTML de WordPress
+      const wpMatch = html.match(/<img[^>]+class=["'][^"']*wp-post-image[^"']*["'][^>]+src=["']([^"'>]+)["']/i);
+      if (wpMatch && wpMatch[1]) return wpMatch[1];
+
+      return undefined;
+    } catch (error) {
+      // Si da error (timeout, bloqueo CORS, 404), simplemente devolvemos undefined
+      // No hacemos console.error para no ensuciar el log con webs lentas
+      return undefined;
+    }
   }
 
   /**
