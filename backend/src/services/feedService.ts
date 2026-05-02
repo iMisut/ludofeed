@@ -148,11 +148,35 @@ class FeedService {
         .digest('hex');
 
       let image: string | undefined;
+      
+      // Try different sources for image (in order of priority)
       if (item['media:content']) {
-        image = item['media:content']['@_url'];
+        const media = Array.isArray(item['media:content']) 
+          ? item['media:content'][0] 
+          : item['media:content'];
+        image = media['@_url'];
+      } else if (item['media:thumbnail']) {
+        const thumb = Array.isArray(item['media:thumbnail']) 
+          ? item['media:thumbnail'][0]
+          : item['media:thumbnail'];
+        image = thumb['@_url'];
+      } else if (item.enclosure) {
+        const enc = Array.isArray(item.enclosure) 
+          ? item.enclosure.find((e: any) => e['@_type']?.startsWith('image')) || item.enclosure[0]
+          : item.enclosure;
+          
+        if (enc && enc['@_type']?.startsWith('image')) {
+          image = enc['@_url'];
+        }
       } else if (item['content:encoded']) {
-        // Try to extract image from content
-        const imgMatch = (item['content:encoded'] as string).match(/<img[^>]+src="([^">]+)"/);
+        // Try to extract image from HTML content (Añadida flag 'i' para case-insensitive)
+        const htmlContent = item['content:encoded'] as string;
+        const imgMatch = htmlContent.match(/<img[^>]+src=["']([^"'>]+)["']/i);
+        image = imgMatch ? imgMatch[1] : undefined;
+      } else if (item.description) {
+        // Try to extract image from description HTML (Añadida flag 'i')
+        const htmlContent = item.description as string;
+        const imgMatch = htmlContent.match(/<img[^>]+src=["']([^"'>]+)["']/i);
         image = imgMatch ? imgMatch[1] : undefined;
       }
 
@@ -194,13 +218,37 @@ class FeedService {
         .digest('hex');
 
       let image: string | undefined;
+      
+      // Try different sources for image (in order of priority)
       if (Array.isArray(item.link)) {
+        // Try to find image link
         const imgLink = item.link.find(
-          (l: any) => l['@_rel'] === 'enclosure' || l['@_type']?.startsWith('image'),
+          (l: any) => 
+            l['@_rel'] === 'enclosure' && l['@_type']?.startsWith('image') ||
+            l['@_type']?.startsWith('image')
         );
         if (imgLink) {
           image = imgLink['@_href'];
         }
+      }
+      
+      // Try to extract image from content
+      if (!image && item.content?.['@_src']) {
+        image = item.content['@_src'];
+      }
+      
+      // Try to extract image from summary HTML
+      if (!image && (item.summary || item['summary:text'])) {
+        const htmlContent = item.summary?.['#text'] || item.summary || '';
+        const imgMatch = (htmlContent as string).match(/<img[^>]+src=["']([^"'>]+)["']/);
+        image = imgMatch ? imgMatch[1] : undefined;
+      }
+      
+      // Try to extract image from content HTML
+      if (!image && item.content?.['#text']) {
+        const htmlContent = item.content['#text'] as string;
+        const imgMatch = htmlContent.match(/<img[^>]+src=["']([^"'>]+)["']/);
+        image = imgMatch ? imgMatch[1] : undefined;
       }
 
       return {
